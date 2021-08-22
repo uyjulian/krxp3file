@@ -39,8 +39,8 @@ bool TVPAllowExtractProtectedStorage = true;
 //---------------------------------------------------------------------------
 // archive filter related
 //---------------------------------------------------------------------------
-tTVPXP3ArchiveExtractionFilter TVPXP3ArchiveExtractionFilter  = NULL;
 #if 0
+tTVPXP3ArchiveExtractionFilter TVPXP3ArchiveExtractionFilter  = NULL;
 void TVPSetXP3ArchiveExtractionFilter(tTVPXP3ArchiveExtractionFilter filter)
 {
 	TVPXP3ArchiveExtractionFilter = filter;
@@ -360,6 +360,9 @@ tTVPXP3Archive::tTVPXP3Archive(const ttstr & name) : tTVPArchive(name)
 	Name = name;
 	Count = 0;
 
+	TVPXP3ArchiveExtractionFilter = NULL;
+	TVPXP3ArchiveExtractionFilterData = NULL;
+
 	tjs_uint64 offset;
 
 	tTJSBinaryStream *st = TVPCreateStream(name);
@@ -576,7 +579,7 @@ tTJSBinaryStream * tTVPXP3Archive::CreateStreamByIndex(tjs_uint idx)
 	try
 	{
 		out = new tTVPXP3ArchiveStream(this, idx, &(item.Segments), stream,
-			item.OrgSize);
+			item.OrgSize, TVPXP3ArchiveExtractionFilter, TVPXP3ArchiveExtractionFilterData);
 	}
 	catch(...)
 	{
@@ -585,6 +588,12 @@ tTJSBinaryStream * tTVPXP3Archive::CreateStreamByIndex(tjs_uint idx)
 	}
 
 	return out;
+}
+//---------------------------------------------------------------------------
+void tTVPXP3Archive::SetArchiveExtractionFilter(tTVPXP3ArchiveExtractionFilterWithUserdata filter, void *filterdata)
+{
+	TVPXP3ArchiveExtractionFilter = filter;
+	TVPXP3ArchiveExtractionFilterData = filterdata;
 }
 //---------------------------------------------------------------------------
 bool tTVPXP3Archive::FindChunk(const tjs_uint8 *data, const tjs_uint8 * name,
@@ -834,7 +843,8 @@ static void TVPPushToSegmentCache(const tTVPSegmentCacheSearchData &sdata, tjs_u
 tTVPXP3ArchiveStream::tTVPXP3ArchiveStream(tTVPXP3Archive *owner,
 	tjs_int storageindex,
 	std::vector<tTVPXP3ArchiveSegment> *segments, tTJSBinaryStream * stream,
-		tjs_uint64 orgsize)
+		tjs_uint64 orgsize,
+		tTVPXP3ArchiveExtractionFilterWithUserdata filter, void *filterdata)
 {
 	StorageIndex = storageindex;
 	Segments = segments;
@@ -852,6 +862,8 @@ tTVPXP3ArchiveStream::tTVPXP3ArchiveStream(tTVPXP3Archive *owner,
 	Owner->AddRef(); // hook
 	Stream = stream;
 	OrgSize = orgsize;
+	TVPXP3ArchiveExtractionFilter = filter;
+	TVPXP3ArchiveExtractionFilterData = filterdata;
 }
 //---------------------------------------------------------------------------
 tTVPXP3ArchiveStream::~tTVPXP3ArchiveStream()
@@ -1037,7 +1049,7 @@ tjs_uint TJS_INTF_METHOD tTVPXP3ArchiveStream::Read(void *buffer, tjs_uint read_
 			tTVPXP3ExtractionFilterInfo info(CurPos, (tjs_uint8*)buffer + write_size,
 				one_size, Owner->GetFileHash(StorageIndex));
 			TVPXP3ArchiveExtractionFilter
-				( (tTVPXP3ExtractionFilterInfo*) &info );
+				( (tTVPXP3ExtractionFilterInfo*) &info, TVPXP3ArchiveExtractionFilterData );
 		}
 
 		// adjust members

@@ -4,6 +4,7 @@ SOURCES += XP3Archive.cpp
 SOURCES += StorageIntf.cpp
 SOURCES += StorageImpl.cpp
 SOURCES += storage.cpp
+SOURCES += cxdec.c
 INCFLAGS += -Iexternal/zlib
 PROJECT_BASENAME = krxp3file
 LDLIBS += -luuid

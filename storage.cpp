@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cxdec.h"
+
 #include "tp_stub.h"
 
 #include "XP3Archive.h"
@@ -219,8 +221,6 @@ private:
 	CompatTJSBinaryStream *vfd;
 };
 
-static std::vector<iTVPStorageMedia*> storage_media_vector;
-
 class XP3Storage : public iTVPStorageMedia
 {
 
@@ -413,10 +413,96 @@ public:
 		name = "";
 	}
 
+	virtual void TJS_INTF_METHOD SetArchiveExtractionFilter(tTVPXP3ArchiveExtractionFilterWithUserdata filter, void *filterdata)
+	{
+		fs->SetArchiveExtractionFilter(filter, filterdata);
+	}
+
 private:
 	tjs_uint ref_count;
 	ttstr name;
 	tTVPXP3Archive *fs;
+};
+
+static std::vector<XP3Storage*> storage_media_vector;
+
+class XP3Encryption
+{
+public:
+	XP3Encryption()
+	{
+		char buf[(sizeof(void *) * 2) + 1];
+		snprintf(buf, (sizeof(void *) * 2) + 1, "%p", this);
+		// The hash function does not work properly with numbers, so change to letters.
+		char *p = buf;
+		while(*p)
+		{
+			if(*p >= '0' && *p <= '9')
+				*p = 'g' + (*p - '0');
+			p++;
+		}
+		name = ttstr(TJS_W("enc")) + buf;
+		filter = NULL;
+	}
+
+	virtual ~XP3Encryption()
+	{
+	}
+
+	virtual void TJS_INTF_METHOD GetName(ttstr &out_name)
+	{
+		out_name = name;
+	}
+
+	virtual void TJS_INTF_METHOD Filter(tTVPXP3ExtractionFilterInfo *info)
+	{
+	}
+
+	static void TVP_tTVPXP3ArchiveExtractionFilter_CONVENTION FilterExec(tTVPXP3ExtractionFilterInfo *info, void *data)
+	{
+		if (info->SizeOfSelf != sizeof(tTVPXP3ExtractionFilterInfo))
+		{
+			TVPThrowExceptionMessage(TJS_W("Incompatible tTVPXP3ExtractionFilterInfo size"));
+		}
+		((XP3Encryption *)data)->Filter(info);
+	}
+
+	virtual void TJS_INTF_METHOD GetArchiveExtractionFilter(tTVPXP3ArchiveExtractionFilterWithUserdata &out_filter, void * &out_data)
+	{
+		out_filter = FilterExec;
+		out_data = this;
+	}
+
+private:
+	ttstr name;
+	tTVPXP3ArchiveExtractionFilterWithUserdata filter;
+};
+
+static std::vector<XP3Encryption*> xp3_encryption_vector;
+
+class XP3CxdecEncryption : public XP3Encryption
+{
+public:
+	XP3CxdecEncryption(cxdec_information *in_information) : XP3Encryption()
+	{
+		memcpy(&information, in_information, sizeof(*in_information));
+		memset(&state, 0, sizeof(state));
+		cxdec_init(&state, &information);
+	}
+
+	virtual ~XP3CxdecEncryption()
+	{
+		cxdec_release(&state);
+	}
+
+	virtual void TJS_INTF_METHOD Filter(tTVPXP3ExtractionFilterInfo *info)
+	{
+		cxdec_decode(&state, &information, info->FileHash, (DWORD)(info->Offset), (PBYTE)(info->Buffer), (DWORD)(info->BufferSize));
+	}
+
+private:
+	cxdec_information information;
+	cxdec_state state;
 };
 
 class StoragesXP3File {
@@ -452,7 +538,7 @@ public:
 		return TJS_W("");
 	}
 
-	static bool setEncryptionXP3(ttstr medianame)
+	static bool setEncryptionXP3(ttstr medianame, ttstr encryptionmethod)
 	{
 		for (auto i = storage_media_vector.begin();
 			i != storage_media_vector.end(); i += 1)
@@ -461,36 +547,146 @@ public:
 			(*i)->GetName(this_medianame);
 			if (medianame == this_medianame)
 			{
-#if 0
-				TVPUnregisterStorageMedia(*i);
-				(*i)->Release();
-				storage_media_vector.erase(i);
-#endif
-				return true;
+				if (encryptionmethod.GetLen() == 0)
+				{
+					(*i)->SetArchiveExtractionFilter(NULL, NULL);
+					return true;
+				}
+				else
+				{
+					for (auto j = xp3_encryption_vector.begin();
+						j != xp3_encryption_vector.end(); j += 1)
+					{
+						ttstr this_encryptionmethod;
+						(*j)->GetName(this_encryptionmethod);
+						if (encryptionmethod == this_encryptionmethod)
+						{
+							tTVPXP3ArchiveExtractionFilterWithUserdata this_encryptionfilter;
+							void *this_encryptionfilterdata;
+							(*j)->GetArchiveExtractionFilter(this_encryptionfilter, this_encryptionfilterdata);
+							(*i)->SetArchiveExtractionFilter(this_encryptionfilter, this_encryptionfilterdata);
+							return true;
+						}
+					}
+				}
+				return false;
 			}
 		}
-
 		return false;
 	}
 
-	static ttstr loadEncryptionMethodCxdec(ttstr filepath)
+	static ttstr loadEncryptionMethodCxdec(tTJSVariant encryption_var)
 	{
-#if 0
-		for (auto i = storage_media_vector.begin();
-			i != storage_media_vector.end(); i += 1)
+		cxdec_information information_tmp;
+		ncbPropAccessor encryption_accessor(encryption_var);
+		int max_count = encryption_accessor.GetArrayCount();
+		if (max_count >= 6)
 		{
-			ttstr this_medianame;
-			(*i)->GetName(this_medianame);
-			if (medianame == this_medianame)
+			tTJSVariant tmp_var;
+			if (encryption_accessor.checkVariant(0, tmp_var))
 			{
-				// TVPUnregisterStorageMedia(*i);
-				// (*i)->Release();
-				// storage_media_vector.erase(i);
-				return true;
+				ncbPropAccessor tmp_accessor(tmp_var);
+				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_first_stage_order))
+				{
+					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_first_stage_order); i += 1)
+					{
+						information_tmp.xcode_building_first_stage_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+					}
+				}
+				else
+				{
+					return TJS_W("");
+				}
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			if (encryption_accessor.checkVariant(1, tmp_var))
+			{
+				ncbPropAccessor tmp_accessor(tmp_var);
+				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_stage_0_order))
+				{
+					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_stage_0_order); i += 1)
+					{
+						information_tmp.xcode_building_stage_0_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+					}
+				}
+				else
+				{
+					return TJS_W("");
+				}
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			if (encryption_accessor.checkVariant(2, tmp_var))
+			{
+				ncbPropAccessor tmp_accessor(tmp_var);
+				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_stage_1_order))
+				{
+					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_stage_1_order); i += 1)
+					{
+						information_tmp.xcode_building_stage_1_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+					}
+				}
+				else
+				{
+					return TJS_W("");
+				}
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			if (encryption_accessor.checkVariant(3, tmp_var))
+			{
+				information_tmp.boundary_mask = (uint16_t)tmp_var.AsInteger();
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			if (encryption_accessor.checkVariant(4, tmp_var))
+			{
+				information_tmp.boundary_offset = (uint16_t)tmp_var.AsInteger();
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			if (encryption_accessor.checkVariant(5, tmp_var))
+			{
+				if (tmp_var.Type() == tvtOctet)
+				{
+					const tTJSVariantOctet *oct = tmp_var.AsOctetNoAddRef();
+					if (oct->GetLength() == (int)sizeof(information_tmp.encryption_control_block))
+					{
+						memcpy(information_tmp.encryption_control_block, oct->GetData(), (int)sizeof(information_tmp.encryption_control_block));
+					}
+					else
+					{
+						return TJS_W("");
+					}
+				}
+				else
+				{
+					return TJS_W("");
+				}
+			}
+			else
+			{
+				return TJS_W("");
+			}
+			{
+				XP3CxdecEncryption * xp3cxdecencryption = new XP3CxdecEncryption(&information_tmp);
+				xp3_encryption_vector.push_back(xp3cxdecencryption);
+				ttstr xp3cxdecencryption_name;
+				xp3cxdecencryption->GetName(xp3cxdecencryption_name);
+				return xp3cxdecencryption_name;
 			}
 		}
-#endif
-
 		return TJS_W("");
 	}
 
