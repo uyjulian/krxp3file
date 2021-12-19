@@ -439,6 +439,8 @@ public:
 		{
 			if(*p >= '0' && *p <= '9')
 				*p = 'g' + (*p - '0');
+			if(*p >= 'A' && *p <= 'Z')
+				*p |= 32;
 			p++;
 		}
 		name = ttstr(TJS_W("enc")) + buf;
