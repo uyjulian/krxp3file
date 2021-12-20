@@ -722,21 +722,6 @@ NCB_ATTACH_CLASS(StoragesXP3File, Storages) {
 };
 
 
-static HMODULE this_hmodule = NULL;
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD Reason, LPVOID lpReserved)
-{
-	if (Reason == DLL_PROCESS_ATTACH)
-	{
-		this_hmodule = hModule;
-		if (hModule != NULL)
-		{
-			DisableThreadLibraryCalls(hModule);
-		}
-	}
-	return TRUE;
-}
-
 static void PreRegistCallback()
 {
 }
