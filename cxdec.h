@@ -1,4 +1,4 @@
-﻿
+
 #ifndef __CXDEC_H__
 #define __CXDEC_H__
 

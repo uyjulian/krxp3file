@@ -1,4 +1,4 @@
-﻿#include "cxdec.h"
+#include "cxdec.h"
 
 #include <windows.h>
 #include <winnt.h>
