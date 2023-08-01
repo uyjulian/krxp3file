@@ -105,12 +105,12 @@ public:
 
 		tjs_uint64 orgpos = GetPosition();
 		tjs_uint64 size = Seek(0, TJS_BS_SEEK_END);
-		Seek(orgpos, SEEK_SET);
+		Seek(orgpos, TJS_BS_SEEK_SET);
 		return size;
 	}
 
 	tjs_uint64 GetPosition() {
-		return Seek(0, SEEK_CUR);
+		return Seek(0, TJS_BS_SEEK_CUR);
 	}
 
 	void SetPosition(tjs_uint64 pos) {
