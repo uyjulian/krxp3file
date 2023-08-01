@@ -470,7 +470,6 @@ public:
 			p++;
 			p2++;
 		}
-		filter = NULL;
 	}
 
 	virtual ~XP3Encryption()
@@ -515,7 +514,6 @@ public:
 
 private:
 	tjs_char *name;
-	tTVPXP3ArchiveExtractionFilterWithUserdata filter;
 };
 
 static std::vector<XP3Encryption*> xp3_encryption_vector;
