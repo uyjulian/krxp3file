@@ -131,7 +131,7 @@ public:
 		destruction.
 	*/
 
-	~tTVPIStreamAdapter();
+	virtual ~tTVPIStreamAdapter();
 
 
 	// IUnknown
