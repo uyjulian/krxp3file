@@ -624,11 +624,11 @@ public:
 			if (encryption_accessor.checkVariant(0, tmp_var))
 			{
 				ncbPropAccessor tmp_accessor(tmp_var);
-				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_first_stage_order))
+				if ((tjs_uint)(tmp_accessor.GetArrayCount()) >= sizeof(information_tmp.xcode_building_first_stage_order))
 				{
-					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_first_stage_order); i += 1)
+					for (tjs_uint i = 0; i < sizeof(information_tmp.xcode_building_first_stage_order); i += 1)
 					{
-						information_tmp.xcode_building_first_stage_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+						information_tmp.xcode_building_first_stage_order[i] = (tjs_uint8)tmp_accessor.getIntValue(i);
 					}
 				}
 				else
@@ -643,11 +643,11 @@ public:
 			if (encryption_accessor.checkVariant(1, tmp_var))
 			{
 				ncbPropAccessor tmp_accessor(tmp_var);
-				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_stage_0_order))
+				if ((tjs_uint)(tmp_accessor.GetArrayCount()) >= sizeof(information_tmp.xcode_building_stage_0_order))
 				{
-					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_stage_0_order); i += 1)
+					for (tjs_uint i = 0; i < sizeof(information_tmp.xcode_building_stage_0_order); i += 1)
 					{
-						information_tmp.xcode_building_stage_0_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+						information_tmp.xcode_building_stage_0_order[i] = (tjs_uint8)tmp_accessor.getIntValue(i);
 					}
 				}
 				else
@@ -662,11 +662,11 @@ public:
 			if (encryption_accessor.checkVariant(2, tmp_var))
 			{
 				ncbPropAccessor tmp_accessor(tmp_var);
-				if (tmp_accessor.GetArrayCount() >= (int)sizeof(information_tmp.xcode_building_stage_1_order))
+				if ((tjs_uint)(tmp_accessor.GetArrayCount()) >= sizeof(information_tmp.xcode_building_stage_1_order))
 				{
-					for (int i = 0; i < (int)sizeof(information_tmp.xcode_building_stage_1_order); i += 1)
+					for (tjs_uint i = 0; i < sizeof(information_tmp.xcode_building_stage_1_order); i += 1)
 					{
-						information_tmp.xcode_building_stage_1_order[i] = (uint8_t)tmp_accessor.getIntValue(i);
+						information_tmp.xcode_building_stage_1_order[i] = (tjs_uint8)tmp_accessor.getIntValue(i);
 					}
 				}
 				else
@@ -680,7 +680,7 @@ public:
 			}
 			if (encryption_accessor.checkVariant(3, tmp_var))
 			{
-				information_tmp.boundary_mask = (uint16_t)tmp_var.AsInteger();
+				information_tmp.boundary_mask = (tjs_uint16)tmp_var.AsInteger();
 			}
 			else
 			{
@@ -688,7 +688,7 @@ public:
 			}
 			if (encryption_accessor.checkVariant(4, tmp_var))
 			{
-				information_tmp.boundary_offset = (uint16_t)tmp_var.AsInteger();
+				information_tmp.boundary_offset = (tjs_uint16)tmp_var.AsInteger();
 			}
 			else
 			{
@@ -699,9 +699,9 @@ public:
 				if (tmp_var.Type() == tvtOctet)
 				{
 					const tTJSVariantOctet *oct = tmp_var.AsOctetNoAddRef();
-					if (oct->GetLength() == (int)sizeof(information_tmp.encryption_control_block))
+					if ((tjs_uint)(oct->GetLength()) == sizeof(information_tmp.encryption_control_block))
 					{
-						memcpy(information_tmp.encryption_control_block, oct->GetData(), (int)sizeof(information_tmp.encryption_control_block));
+						memcpy(information_tmp.encryption_control_block, oct->GetData(), sizeof(information_tmp.encryption_control_block));
 					}
 					else
 					{
