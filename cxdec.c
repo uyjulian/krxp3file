@@ -205,11 +205,12 @@ static bool xcode_building_first_stage(const cxdec_information *information, cxd
 	{
 		// MOV ESI, encryption_control_block
 		// MOV EAX, uint32_t PTR DS:[ESI+((xcode_random(xcode) & 0x3ff) << 2)]
-		uint32_t rand_val = xcode_random(xcode);
 		if (!push_xcode_1xuint8(xcode, 0xbe)
 			|| !push_xcode_1xuint32(xcode, (uint32_t)(information->encryption_control_block))
-			|| !push_xcode_2xuint8(xcode, 0x8b, 0x86)
-			|| !push_xcode_1xuint32(xcode, (rand_val & 0x3ff) << 2))
+			|| !push_xcode_2xuint8(xcode, 0x8b, 0x86))
+			return false;
+		uint32_t rand_val = xcode_random(xcode);
+		if (!push_xcode_1xuint32(xcode, (rand_val & 0x3ff) << 2))
 			return false;
 		uint32_t ecb_val = 0;
 		memcpy(&ecb_val, &(information->encryption_control_block[(rand_val & 0x3ff) << 2]), sizeof(ecb_val));
@@ -219,9 +220,10 @@ static bool xcode_building_first_stage(const cxdec_information *information, cxd
 	else if (result == order[1])
 	{
 		// MOV EAX, xcode_random(xcode)
+		if (!push_xcode_1xuint8(xcode, 0xb8))
+			return false;
 		uint32_t rand_val = xcode_random(xcode);
-		if (!push_xcode_1xuint8(xcode, 0xb8)
-			|| !push_xcode_1xuint32(xcode, rand_val))
+		if (!push_xcode_1xuint32(xcode, rand_val))
 			return false;
 		if (!push_gadget_func(gadget_state, cxdec_gadget_mov_val, rand_val))
 			return false;
@@ -313,9 +315,10 @@ static bool xcode_building_stage0(const cxdec_information *information, cxdec_xc
 	else if (result == order[5])
 	{
 		// XOR EAX, xcode_random(xcode)
+		if (!push_xcode_1xuint8(xcode, 0x35))
+			return false;
 		uint32_t rand_val = xcode_random(xcode);
-		if (!push_xcode_1xuint8(xcode, 0x35)
-			|| !push_xcode_1xuint32(xcode, rand_val))
+		if (!push_xcode_1xuint32(xcode, rand_val))
 			return false;
 		if (!push_gadget_func(gadget_state, cxdec_gadget_xor_val, rand_val))
 			return false;
