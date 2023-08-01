@@ -610,12 +610,12 @@ static void __cxdec_decode(cxdec_state *state, const cxdec_information *informat
 	key[10] = (uint8_t)(ret[0]);
 	uint32_t key1 = ret[1] >> 16;
 	uint32_t key2 = ret[1] & 0xffff;
-	*(uint32_t *)&key[0] = key1;
+	memcpy(&key[0], &key1, sizeof(key1));
 
 	if (key1 == key2)
 		++key2;
 
-	*(uint32_t *)&key[4] = key2;
+	memcpy(&key[4], &key2, sizeof(key2));
 
 	if (!key[10])
 		key[10] = 1;

@@ -59,7 +59,7 @@ public:
 		else
 		{
 			orgpossaved = true;
-			*(LARGE_INTEGER*)&orgpos = *(LARGE_INTEGER*)&newpos;
+			memcpy(&orgpos, &newpos, sizeof(orgpos));
 		}
 
 		ofs.QuadPart = offset;
