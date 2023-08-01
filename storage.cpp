@@ -229,19 +229,25 @@ public:
 	{
 		ref_count = 1;
 		fs = in_fs;
-		char buf[(sizeof(void *) * 2) + 1];
-		snprintf(buf, (sizeof(void *) * 2) + 1, "%p", this);
+		char buf[3 + (sizeof(void *) * 2) + 1];
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "%s%p", "xpk", this);
 		// The hash function does not work properly with numbers, so change to letters.
+		this->name = new tjs_char[sizeof(buf)];
+		memset(this->name, 0, sizeof(buf) * sizeof(tjs_char));
 		char *p = buf;
+		tjs_char *p2 = this->name;
 		while(*p)
 		{
 			if(*p >= '0' && *p <= '9')
-				*p = 'g' + (*p - '0');
-			if(*p >= 'A' && *p <= 'Z')
-				*p |= 32;
+				*p2 = 'g' + (*p - '0');
+			else if(*p >= 'A' && *p <= 'Z')
+				*p2 = (*p) | 32;
+			else
+				*p2 = *p;
 			p++;
+			p2++;
 		}
-		name = ttstr(TJS_W("xpk")) + buf;
 	}
 
 	virtual ~XP3Storage()
@@ -250,6 +256,11 @@ public:
 		{
 			delete fs;
 			fs = NULL;
+		}
+		if (this->name)
+		{
+			delete[] this->name;
+			this->name = NULL;
 		}
 	}
 
@@ -278,7 +289,14 @@ public:
 	// returns media name like "file", "http" etc.
 	virtual void TJS_INTF_METHOD GetName(ttstr &out_name)
 	{
-		out_name = name;
+		if (this->name)
+		{
+			out_name = name;
+		}
+		else
+		{
+			out_name = TJS_W("");
+		}
 	}
 
 	//	virtual ttstr TJS_INTF_METHOD IsCaseSensitive() = 0;
@@ -422,7 +440,7 @@ public:
 
 private:
 	tjs_uint ref_count;
-	ttstr name;
+	tjs_char *name;
 	tTVPXP3Archive *fs;
 };
 
@@ -433,29 +451,47 @@ class XP3Encryption
 public:
 	XP3Encryption()
 	{
-		char buf[(sizeof(void *) * 2) + 1];
-		snprintf(buf, (sizeof(void *) * 2) + 1, "%p", this);
+		char buf[3 + (sizeof(void *) * 2) + 1];
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "%s%p", "enc", this);
 		// The hash function does not work properly with numbers, so change to letters.
+		this->name = new tjs_char[sizeof(buf)];
+		memset(this->name, 0, sizeof(buf) * sizeof(tjs_char));
 		char *p = buf;
+		tjs_char *p2 = this->name;
 		while(*p)
 		{
 			if(*p >= '0' && *p <= '9')
-				*p = 'g' + (*p - '0');
-			if(*p >= 'A' && *p <= 'Z')
-				*p |= 32;
+				*p2 = 'g' + (*p - '0');
+			else if(*p >= 'A' && *p <= 'Z')
+				*p2 = (*p) | 32;
+			else
+				*p2 = *p;
 			p++;
+			p2++;
 		}
-		name = ttstr(TJS_W("enc")) + buf;
 		filter = NULL;
 	}
 
 	virtual ~XP3Encryption()
 	{
+		if (this->name)
+		{
+			delete[] this->name;
+			this->name = NULL;
+		}
 	}
 
 	virtual void TJS_INTF_METHOD GetName(ttstr &out_name)
 	{
-		out_name = name;
+		if (this->name)
+		{
+			out_name = this->name;
+		}
+		else
+		{
+			out_name = TJS_W("");
+		}
 	}
 
 	virtual void TJS_INTF_METHOD Filter(tTVPXP3ExtractionFilterInfo *info)
@@ -478,7 +514,7 @@ public:
 	}
 
 private:
-	ttstr name;
+	tjs_char *name;
 	tTVPXP3ArchiveExtractionFilterWithUserdata filter;
 };
 
