@@ -101,7 +101,7 @@ public:
 		STATSTG stg;
 
 		hr = Stream->Stat(&stg, STATFLAG_NONAME);
-		if (SUCCEEDED(hr)) stg.cbSize.QuadPart;
+		if (SUCCEEDED(hr)) return (tjs_uint64)(stg.cbSize.QuadPart);
 
 		tjs_uint64 orgpos = GetPosition();
 		tjs_uint64 size = Seek(0, TJS_BS_SEEK_END);
