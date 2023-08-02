@@ -571,6 +571,8 @@ void cxdec_release(cxdec_state *state)
 static uint32_t cxdec_execute_xcode_single(cxdec_state *state, uint32_t index, uint32_t hash)
 {
 #ifdef CXDEC_USE_CODEGEN
+	return state->address_list[index](hash);
+#else
 	cxdec_gadget_context gadget_context;
 	memset(&gadget_context, 0, sizeof(gadget_context));
 	gadget_context.state = state;
@@ -582,8 +584,6 @@ static uint32_t cxdec_execute_xcode_single(cxdec_state *state, uint32_t index, u
 		gadget_cur->gadget_functions[i](&gadget_context);
 	}
 	return gadget_context.reg1;
-#else
-	return state->address_list[index](hash);
 #endif
 }
 
