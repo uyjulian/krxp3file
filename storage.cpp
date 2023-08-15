@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#include <objidl.h>
 #include "ncbind/ncbind.hpp"
 #include <map>
 #include <vector>
