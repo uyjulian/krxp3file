@@ -96,6 +96,14 @@ public:
 		return read;
 	}
 
+	virtual tjs_uint TJS_INTF_METHOD Write(const void *buffer, tjs_uint write_size) {
+		ULONG cb = write_size;
+		ULONG write;
+		HRESULT hr = Stream->Write(buffer, cb, &write);
+		if(FAILED(hr)) write = 0;
+		return write;
+	}
+
 	virtual tjs_uint64 TJS_INTF_METHOD GetSize() {
 		if (!Stream)
 		{
@@ -125,6 +133,11 @@ public:
 	void ReadBuffer(void *buffer, tjs_uint read_size) {
 		if(Read(buffer, read_size) != read_size)
 			TVPThrowExceptionMessage(TJS_W("Read error"));
+	}
+
+	void WriteBuffer(const void *buffer, tjs_uint write_size) {
+		if(Write(buffer, write_size) != write_size)
+			TVPThrowExceptionMessage(TJS_W("Write error"));
 	}
 
 	// reads little-endian integers
